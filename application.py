@@ -95,9 +95,13 @@ def editRestaurant(restaurant_id):
     editedRestaurant = session.query(
         Restaurant).filter_by(id=restaurant_id).one()
     if request.method == 'POST':
-        if request.form['name']:
-            editedRestaurant.name = request.form['name']
-            return redirect(url_for('showRestaurants'))
+        if login_session['user_id'] == editedRestaurant.user_id:
+            if request.form['name']:
+                editedRestaurant.name = request.form['name']
+                return redirect(url_for('showRestaurants'))
+        else:
+            flash("You are not allowed to edit this item.")
+            return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
         login_status = None
         if 'email' in login_session:
@@ -105,6 +109,7 @@ def editRestaurant(restaurant_id):
                 id=restaurant_id).one()
             if editedRestaurant.user_id == login_session['user_id']:
                 login_status = True
+
         return render_template(
             'editRestaurant.html',
             restaurant=editedRestaurant,
@@ -119,10 +124,14 @@ def deleteRestaurant(restaurant_id):
     restaurantToDelete = session.query(
         Restaurant).filter_by(id=restaurant_id).one()
     if request.method == 'POST':
-        session.delete(restaurantToDelete)
-        session.commit()
-        return redirect(
-            url_for('showRestaurants', restaurant_id=restaurant_id))
+        if login_session['user_id'] == restaurantToDelete.user_id:
+            session.delete(restaurantToDelete)
+            session.commit()
+            return redirect(
+                url_for('showRestaurants', restaurant_id=restaurant_id))
+        else:
+            flash("You are not allowed to delete this item.")
+            return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
         login_status = None
         if 'email' in login_session:
@@ -182,17 +191,21 @@ def newMenuItem(restaurant_id):
 def editMenuItem(restaurant_id, menu_id):
     editedItem = session.query(MenuItem).filter_by(id=menu_id).one()
     if request.method == 'POST':
-        if request.form['name']:
-            editedItem.name = request.form['name']
-        if request.form['description']:
-            editedItem.description = request.form['name']
-        if request.form['price']:
-            editedItem.price = request.form['price']
-        if request.form['course']:
-            editedItem.course = request.form['course']
-        session.add(editedItem)
-        session.commit()
-        return redirect(url_for('showMenu', restaurant_id=restaurant_id))
+        if login_session['user_id'] == editedItem.user_id:
+            if request.form['name']:
+                editedItem.name = request.form['name']
+            if request.form['description']:
+                editedItem.description = request.form['name']
+            if request.form['price']:
+                editedItem.price = request.form['price']
+            if request.form['course']:
+                editedItem.course = request.form['course']
+            session.add(editedItem)
+            session.commit()
+            return redirect(url_for('showMenu', restaurant_id=restaurant_id))
+        else:
+            flash("You are not allowed to edit this item.")
+            return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
         # Verifica se usuário está logado
         login_status = None
@@ -214,9 +227,13 @@ def editMenuItem(restaurant_id, menu_id):
 def deleteMenuItem(restaurant_id, menu_id):
     itemToDelete = session.query(MenuItem).filter_by(id=menu_id).one()
     if request.method == 'POST':
-        session.delete(itemToDelete)
-        session.commit()
-        return redirect(url_for('showMenu', restaurant_id=restaurant_id))
+        if login_session['user_id'] == itemToDelete.user_id:
+            session.delete(itemToDelete)
+            session.commit()
+            return redirect(url_for('showMenu', restaurant_id=restaurant_id))
+        else:
+            flash("You are not allowed to delete this item.")
+            return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
         login_status = None
         if 'email' in login_session:
