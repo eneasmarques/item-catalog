@@ -31,14 +31,18 @@ a {
 }
 
 .pane {
-  position: absolute;
-  left: 25%;
+  display: flex;
   border: 2px solid;
-  border-radius: 25px;
   padding: 5px;
   margin: 5px;
   border-color: #999999;
   background-color: #333333;
+}
+.menu {
+  border-right: 1px solid;
+  border-color: #999999;
+  margin-right: 20px;
+  min-width: 300px;
 }
 .header {
   left: 50%;

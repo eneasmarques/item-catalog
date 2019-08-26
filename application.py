@@ -47,17 +47,17 @@ def showLogin():
 @app.route('/restaurant/')
 def showRestaurants():
     # Detect login status
-    login_status = None
-    if 'email' in login_session:
-        login_status = True
-    print(login_status)
+    # login_status = None
+    # if 'email' in login_session:
+    #     login_status = True
+    # print(login_status)
     # Generate state token for Google Sign-In
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                    for x in range(32))
-    login_session['state'] = state
-    restaurants = session.query(Restaurant).all()
+    # state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+    #                 for x in range(32))
+    # login_session['state'] = state
+    restaurant = session.query(Restaurant).first()
     # return "This page will show all my restaurants"
-    return render_template('restaurants.html', restaurants=restaurants, login_status=login_status)
+    return redirect(url_for('showMenu', restaurant_id=restaurant.id))
 
 
 @app.route('/restaurant/<int:restaurant_id>/menu/JSON')
@@ -131,10 +131,16 @@ def deleteRestaurant(restaurant_id):
 @app.route('/restaurant/<int:restaurant_id>/')
 @app.route('/restaurant/<int:restaurant_id>/menu/')
 def showMenu(restaurant_id):
+    restaurants = session.query(Restaurant).all()
     restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
+
+    login_status = None
+    if 'email' in login_session:
+        login_status = True
+
     items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
-    return render_template('menu.html', items=items, restaurant=restaurant)
+    return render_template('menu.html', items=items, restaurant=restaurant, login_status=login_status,restaurants=restaurants)
     # return 'This page is the menu for restaurant %s' % restaurant_id
 
 
@@ -171,9 +177,11 @@ def editMenuItem(restaurant_id, menu_id):
         session.commit()
         return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
-
+        login_status = None
+        if 'email' in login_session:
+            login_status = True
         return render_template(
-            'editmenuitem.html', restaurant_id=restaurant_id, menu_id=menu_id, item=editedItem)
+            'editmenuitem.html', restaurant_id=restaurant_id, menu_id=menu_id, item=editedItem, login_status=login_status)
 
     # return 'This page is for editing menu item %s' % menu_id
 
