@@ -42,24 +42,15 @@ def showLogin():
     return render_template('login.html', STATE=state)
 
 
-# Show all restaurants
+# Irá redirecionar para que seja mostrado todos os Restaurantes e Itens
 @app.route('/')
 @app.route('/restaurant/')
 def showRestaurants():
-    # Detect login status
-    # login_status = None
-    # if 'email' in login_session:
-    #     login_status = True
-    # print(login_status)
-    # Generate state token for Google Sign-In
-    # state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-    #                 for x in range(32))
-    # login_session['state'] = state
     restaurant = session.query(Restaurant).first()
-    # return "This page will show all my restaurants"
     return redirect(url_for('showMenu', restaurant_id=restaurant.id))
 
 
+# JSON com o Menu de um Restaurante
 @app.route('/restaurant/<int:restaurant_id>/menu/JSON')
 def restaurantMenuJSON(restaurant_id):
     restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
@@ -67,20 +58,20 @@ def restaurantMenuJSON(restaurant_id):
         restaurant_id=restaurant_id).all()
     return jsonify(MenuItems=[i.serialize for i in items])
 
-
+# JSON com todos os Itens de um Menu
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/JSON')
 def menuItemJSON(restaurant_id, menu_id):
     Menu_Item = session.query(MenuItem).filter_by(id=menu_id).one()
     return jsonify(Menu_Item=Menu_Item.serialize)
 
-
+# JSON com todos os Restaurantes
 @app.route('/restaurant/JSON')
 def restaurantsJSON():
     restaurants = session.query(Restaurant).all()
     return jsonify(restaurants=[r.serialize for r in restaurants])
 
 
-# Create a new restaurant
+# Cria um novo Restaurante
 @app.route('/restaurant/new/', methods=['GET', 'POST'])
 def newRestaurant():
     if request.method == 'POST':
@@ -93,7 +84,7 @@ def newRestaurant():
     # return "This page will be for making a new restaurant"
 
 
-# Edit a restaurant
+# Edita um Restaurante
 @app.route('/restaurant/<int:restaurant_id>/edit/', methods=['GET', 'POST'])
 def editRestaurant(restaurant_id):
     editedRestaurant = session.query(
@@ -111,7 +102,7 @@ def editRestaurant(restaurant_id):
     # return 'This page will be for editing restaurant %s' % restaurant_id
 
 
-# Delete a restaurant
+# Delete um Restaurante
 @app.route('/restaurant/<int:restaurant_id>/delete/', methods=['GET', 'POST'])
 def deleteRestaurant(restaurant_id):
     restaurantToDelete = session.query(
@@ -127,13 +118,14 @@ def deleteRestaurant(restaurant_id):
     # return 'This page will be for deleting restaurant %s' % restaurant_id
 
 
-# Show a restaurant menu
+# Mostra todos os Restaurantes e o primeiro Menu do mesmo
 @app.route('/restaurant/<int:restaurant_id>/')
 @app.route('/restaurant/<int:restaurant_id>/menu/')
 def showMenu(restaurant_id):
     restaurants = session.query(Restaurant).all()
     restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
 
+    # Verifica se está logado
     login_status = None
     if 'email' in login_session:
         login_status = True
@@ -141,10 +133,9 @@ def showMenu(restaurant_id):
     items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
     return render_template('menu.html', items=items, restaurant=restaurant, login_status=login_status,restaurants=restaurants)
-    # return 'This page is the menu for restaurant %s' % restaurant_id
 
 
-# Create a new menu item
+# Ciar um novo Item do Menu
 @app.route(
     '/restaurant/<int:restaurant_id>/menu/new/', methods=['GET', 'POST'])
 def newMenuItem(restaurant_id):
@@ -159,7 +150,7 @@ def newMenuItem(restaurant_id):
         return render_template('newmenuitem.html', restaurant_id=restaurant_id)
 
 
-# Edit a menu item
+# Edita um Item de um Menu
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/edit',
            methods=['GET', 'POST'])
 def editMenuItem(restaurant_id, menu_id):
@@ -177,16 +168,16 @@ def editMenuItem(restaurant_id, menu_id):
         session.commit()
         return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
+        # Verifica se usuário está logado
         login_status = None
         if 'email' in login_session:
             login_status = True
+
         return render_template(
             'editmenuitem.html', restaurant_id=restaurant_id, menu_id=menu_id, item=editedItem, login_status=login_status)
 
-    # return 'This page is for editing menu item %s' % menu_id
 
-
-# Delete a menu item
+# Deleta um Item do Menu
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/delete',
            methods=['GET', 'POST'])
 def deleteMenuItem(restaurant_id, menu_id):
@@ -197,14 +188,15 @@ def deleteMenuItem(restaurant_id, menu_id):
         return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
         return render_template('deleteMenuItem.html', item=itemToDelete)
-    # return "This page is for deleting menu item %s" % menu_id
 
 
+# Retorna informações do usuário
 def getUserInfo(user_id):
     user = session.query(Users).filter_by(id=user_id).one_or_none()
     return user
 
 
+# Retorna ID do usuário
 def getUserID(email):
     try:
         user = session.query(Users).filter_by(email=email).one()
@@ -212,7 +204,7 @@ def getUserID(email):
     except Exception:
         return None
 
-
+# Cria um novo Usuário
 def createUser(login_session):
     newUser = Users(name=login_session['username'], email=login_session[
                    'email'])
@@ -222,19 +214,19 @@ def createUser(login_session):
     return user.id
    
 
-# Connect to Google Account
+# Conecta em uma conta do Google
 @app.route('/google_connect', methods=['POST'])
 def google_connect():
-    # Validate state token
+    # Valida o token
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    # Obtain authorization code
+    # Código de autorização
     code = request.data
 
     try:
-        # Upgrade the authorization code into a credentials object
+        # Atualiza o código de autorização no client_secrets
         oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
         oauth_flow.redirect_uri = 'postmessage'
         credentials = oauth_flow.step2_exchange(code)
@@ -245,20 +237,20 @@ def google_connect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
-    # Check that the access token is valid.
+    # Verifica se o token é válido
     access_token = credentials.access_token
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
            % access_token)
     h = httplib2.Http()
     result = json.loads((h.request(url, 'GET')[1]).decode())
 
-    # If there was an error in the access token info, abort.
+    # Aborta se houver erro nas informações do token de acesso
     if result.get('error') is not None:
         response = make_response(json.dumps(result.get('error')), 500)
         response.headers['Content-Type'] = 'application/json'
         return response
 
-    # Verify that the access token is used for the intended user.
+    # Verifica se o token de acesso é usado para o usuário pretendido.
     google_id = credentials.id_token['sub']
     if result['user_id'] != google_id:
         response = make_response(
@@ -266,7 +258,7 @@ def google_connect():
         response.headers['Content-Type'] = 'application/json'
         return response
   
-    # Verify that the access token is valid for this app.
+    # Verifica se o token de acesso é válido para este aplicativo.
     if result['issued_to'] != CLIENT_ID:
         response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
@@ -282,22 +274,20 @@ def google_connect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
-    # Store the access token in the session for later use.
+    # Armazena o token de acesso na sessão para uso posterior
     login_session['access_token'] = credentials.access_token
     login_session['google_id'] = google_id
    
-    # Get user info
+    # Obtem informações do usuário
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
     params = {'access_token': credentials.access_token, 'alt': 'json'}
     answer = requests.get(userinfo_url, params=params)
 
     data = answer.json()
-    print("Google Connect9")
 
     login_session['username'] = data['name']
     login_session['email'] = data['email']
 
-    print(login_session['email'])
     user_id = getUserID(login_session['email'])
     if not user_id:
         user_id = createUser(login_session)
@@ -309,10 +299,11 @@ def google_connect():
     output = 'ok'
     return output
 
+
+# Desconectar do login do Google
 @app.route('/logout')
 @app.route('/gdisconnect')
 def gdisconnect():
-    """App route function to disconnect from Google login."""
     try:
         access_token = login_session['username']
     except KeyError:
