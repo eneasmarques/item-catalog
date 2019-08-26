@@ -34,6 +34,7 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = scoped_session(DBSession)
 
+
 @app.route('/login')
 def showLogin():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
@@ -132,7 +133,8 @@ def showMenu(restaurant_id):
 
     items = session.query(MenuItem).filter_by(
         restaurant_id=restaurant_id).all()
-    return render_template('menu.html', items=items, restaurant=restaurant, login_status=login_status,restaurants=restaurants)
+    return render_template('menu.html', items=items, restaurant=restaurant,
+                           login_status=login_status, restaurants=restaurants)
 
 
 # Ciar um novo Item do Menu
@@ -140,8 +142,12 @@ def showMenu(restaurant_id):
     '/restaurant/<int:restaurant_id>/menu/new/', methods=['GET', 'POST'])
 def newMenuItem(restaurant_id):
     if request.method == 'POST':
-        newItem = MenuItem(name=request.form['name'], description=request.form[
-                           'description'], price=request.form['price'], course=request.form['course'], restaurant_id=restaurant_id)
+        newItem = MenuItem(
+            name=request.form['name'],
+            description=request.form['description'],
+            price=request.form['price'],
+            course=request.form['course'],
+            restaurant_id=restaurant_id)
         session.add(newItem)
         session.commit()
 
@@ -174,7 +180,9 @@ def editMenuItem(restaurant_id, menu_id):
             login_status = True
 
         return render_template(
-            'editmenuitem.html', restaurant_id=restaurant_id, menu_id=menu_id, item=editedItem, login_status=login_status)
+            'editmenuitem.html', restaurant_id=restaurant_id,
+            menu_id=menu_id, item=editedItem,
+            login_status=login_status)
 
 
 # Deleta um Item do Menu
@@ -205,14 +213,16 @@ def getUserID(email):
         return None
 
 # Cria um novo Usuário
+
+
 def createUser(login_session):
     newUser = Users(name=login_session['username'], email=login_session[
-                   'email'])
+        'email'])
     session.add(newUser)
     session.commit()
     user = session.query(Users).filter_by(email=login_session['email']).one()
     return user.id
-   
+
 
 # Conecta em uma conta do Google
 @app.route('/google_connect', methods=['POST'])
@@ -257,7 +267,7 @@ def google_connect():
             json.dumps("Token's user ID doesn't match given user ID."), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-  
+
     # Verifica se o token de acesso é válido para este aplicativo.
     if result['issued_to'] != CLIENT_ID:
         response = make_response(
@@ -265,7 +275,7 @@ def google_connect():
         print("Token's client ID does not match app's.")
         response.headers['Content-Type'] = 'application/json'
         return response
-   
+
     stored_access_token = login_session.get('access_token')
     stored_google_id = login_session.get('google_id')
     if stored_access_token is not None and google_id == stored_google_id:
@@ -277,7 +287,7 @@ def google_connect():
     # Armazena o token de acesso na sessão para uso posterior
     login_session['access_token'] = credentials.access_token
     login_session['google_id'] = google_id
-   
+
     # Obtem informações do usuário
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
     params = {'access_token': credentials.access_token, 'alt': 'json'}
@@ -317,7 +327,7 @@ def gdisconnect():
             json.dumps('Current user not connected.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    
+
     del login_session['user_id']
     del login_session['username']
     del login_session['email']
@@ -332,4 +342,4 @@ def gdisconnect():
 if __name__ == '__main__':
     app.secret_key = 'ycx5M8nv2yoXVAUed69f0kha'
     app.debug = True
-    app.run(host = '0.0.0.0', port = 5000, threaded=False)
+    app.run(host='0.0.0.0', port=5000, threaded=False)

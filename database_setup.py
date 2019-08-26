@@ -8,6 +8,8 @@ from sqlalchemy import create_engine
 Base = declarative_base()
 
 # Use Python classes to establish database tables
+
+
 class Users(Base):
     __tablename__ = 'users'
 
