@@ -10,9 +10,11 @@
 			<p>Name:</p>
 			<input type ='text' size='30' name='name' placeholder = '{{restaurant.name }}' value='{{restaurant.name}}'>
 
-			<input type='submit' value='Edit'>
+			{% if login_status == True %}
+				<input type='submit' value='Edit'>
+			{% endif %}
 
-			<a href = '{{url_for('showRestaurants')}}'> Cancel </a>
+			<a href ='{{url_for('showRestaurants')}}'> Cancel </a>
 		</form>
 	</div>
 {% endblock %}

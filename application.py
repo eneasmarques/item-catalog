@@ -59,11 +59,13 @@ def restaurantMenuJSON(restaurant_id):
         restaurant_id=restaurant_id).all()
     return jsonify(MenuItems=[i.serialize for i in items])
 
+
 # JSON com todos os Itens de um Menu
 @app.route('/restaurant/<int:restaurant_id>/menu/<int:menu_id>/JSON')
 def menuItemJSON(restaurant_id, menu_id):
     Menu_Item = session.query(MenuItem).filter_by(id=menu_id).one()
     return jsonify(Menu_Item=Menu_Item.serialize)
+
 
 # JSON com todos os Restaurantes
 @app.route('/restaurant/JSON')
@@ -76,7 +78,9 @@ def restaurantsJSON():
 @app.route('/restaurant/new/', methods=['GET', 'POST'])
 def newRestaurant():
     if request.method == 'POST':
-        newRestaurant = Restaurant(name=request.form['name'])
+        newRestaurant = Restaurant(
+            name=request.form['name'],
+            user_id=login_session['user_id'])
         session.add(newRestaurant)
         session.commit()
         return redirect(url_for('showRestaurants'))
@@ -90,15 +94,21 @@ def newRestaurant():
 def editRestaurant(restaurant_id):
     editedRestaurant = session.query(
         Restaurant).filter_by(id=restaurant_id).one()
-    print(restaurant_id, editedRestaurant.name)
     if request.method == 'POST':
         if request.form['name']:
             editedRestaurant.name = request.form['name']
-            print(editedRestaurant.name)
             return redirect(url_for('showRestaurants'))
     else:
+        login_status = None
+        if 'email' in login_session:
+            editedRestaurant = session.query(Restaurant).filter_by(
+                id=restaurant_id).one()
+            if editedRestaurant.user_id == login_session['user_id']:
+                login_status = True
         return render_template(
-            'editRestaurant.html', restaurant=editedRestaurant)
+            'editRestaurant.html',
+            restaurant=editedRestaurant,
+            login_status=login_status)
 
     # return 'This page will be for editing restaurant %s' % restaurant_id
 
@@ -114,8 +124,17 @@ def deleteRestaurant(restaurant_id):
         return redirect(
             url_for('showRestaurants', restaurant_id=restaurant_id))
     else:
+        login_status = None
+        if 'email' in login_session:
+            editedRestaurant = session.query(Restaurant).filter_by(
+                id=restaurant_id).one()
+            if editedRestaurant.user_id == login_session['user_id']:
+                login_status = True
+
         return render_template(
-            'deleteRestaurant.html', restaurant=restaurantToDelete)
+            'deleteRestaurant.html',
+            restaurant=restaurantToDelete,
+            login_status=login_status)
     # return 'This page will be for deleting restaurant %s' % restaurant_id
 
 
@@ -147,7 +166,8 @@ def newMenuItem(restaurant_id):
             description=request.form['description'],
             price=request.form['price'],
             course=request.form['course'],
-            restaurant_id=restaurant_id)
+            restaurant_id=restaurant_id,
+            user_id=login_session['user_id'])
         session.add(newItem)
         session.commit()
 
@@ -177,7 +197,10 @@ def editMenuItem(restaurant_id, menu_id):
         # Verifica se usuário está logado
         login_status = None
         if 'email' in login_session:
-            login_status = True
+            editedMenuItem = session.query(MenuItem).filter_by(
+                id=menu_id).one()
+            if editedMenuItem.user_id == login_session['user_id']:
+                login_status = True
 
         return render_template(
             'editmenuitem.html', restaurant_id=restaurant_id,
@@ -195,7 +218,16 @@ def deleteMenuItem(restaurant_id, menu_id):
         session.commit()
         return redirect(url_for('showMenu', restaurant_id=restaurant_id))
     else:
-        return render_template('deleteMenuItem.html', item=itemToDelete)
+        login_status = None
+        if 'email' in login_session:
+            editedMenuItem = session.query(MenuItem).filter_by(
+                id=menu_id).one()
+            if editedMenuItem.user_id == login_session['user_id']:
+                login_status = True
+
+        return render_template('deleteMenuItem.html',
+                               item=itemToDelete,
+                               login_status=login_status)
 
 
 # Retorna informações do usuário
@@ -272,7 +304,6 @@ def google_connect():
     if result['issued_to'] != CLIENT_ID:
         response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
-        print("Token's client ID does not match app's.")
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -305,7 +336,6 @@ def google_connect():
     login_session['user_id'] = user_id
 
     flash("You are now logged in as %s" % login_session['username'])
-    print("done!")
     output = 'ok'
     return output
 
@@ -317,12 +347,9 @@ def gdisconnect():
     try:
         access_token = login_session['username']
     except KeyError:
-        print('Failed to get access token')
         flash('Failed to get access token')
         return redirect(url_for('showRestaurants'))
-    print("User's name was {}.".format(login_session['username']))
     if access_token is None:
-        print('Access Token is None')
         response = make_response(
             json.dumps('Current user not connected.'), 401)
         response.headers['Content-Type'] = 'application/json'
@@ -334,7 +361,6 @@ def gdisconnect():
     del login_session['google_id']
     del login_session['access_token']
 
-    print('Successfully logged out.')
     flash('Successfully logged out.')
     return redirect(url_for('showRestaurants'))
 

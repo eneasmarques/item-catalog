@@ -3,7 +3,9 @@
 	<h1> Are you sure you want to delete {{item.name}}? </h1>
 
 	<form action="#" method = 'post'>
-		<input type='submit', value = 'Delete'>
+		{% if login_status == True %}
+			<input type='submit', value = 'Delete'>
+		{% endif %}
 	</form>
 
 	<a href={{url_for('showRestaurants')}}> Cancel </a>
