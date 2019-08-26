@@ -3,11 +3,19 @@
 <div class = 'pane'>
 	<h1>Restaurants</h1>
 	<a href="{{url_for('newRestaurant')}}" > <h3> Create a New Restaurant </h3> </a>
+
+	{% if login_status == True %}
+		<p> <a href="{{ url_for('gdisconnect') }}">Logout</a> </p>
+	{% else %}
+	<p> <a href="{{ url_for('showLogin') }}">Login</a> </p>
+	{% endif %}
 	
 	{% for restaurant in restaurants %}
 		<a href = "{{url_for('showMenu', restaurant_id = restaurant.id)}}"> <p>{{restaurant.name}}</p></a>
+		{% if login_status == True %}
 		<p><a href = "{{url_for('editRestaurant',restaurant_id = restaurant.id)}}">Edit Restaurant</a></p>
 		<p> <a href = "{{url_for('deleteRestaurant',restaurant_id = restaurant.id)}}">Delete Restaurant</a> </p>
+		{% endif %}
 	{% endfor %}
 </div>
 {% endblock %}

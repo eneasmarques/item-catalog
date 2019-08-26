@@ -7,12 +7,22 @@ from sqlalchemy import create_engine
 
 Base = declarative_base()
 
+# Use Python classes to establish database tables
+class Users(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(250), nullable=False)
+    email = Column(String(250), nullable=False)
+
 
 class Restaurant(Base):
     __tablename__ = 'restaurant'
 
     id = Column(Integer, primary_key=True)
     name = Column(String(250), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(Users)
 
     @property
     def serialize(self):
@@ -33,6 +43,8 @@ class MenuItem(Base):
     course = Column(String(250))
     restaurant_id = Column(Integer, ForeignKey('restaurant.id'))
     restaurant = relationship(Restaurant)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(Users)
 
     @property
     def serialize(self):
@@ -47,6 +59,5 @@ class MenuItem(Base):
 
 
 engine = create_engine('sqlite:///restaurantmenu.db')
-
-
+# engine = create_engine('URL_DATA')
 Base.metadata.create_all(engine)
